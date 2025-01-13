@@ -17,9 +17,10 @@ public:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 	void RetriveAlert();
-	void checkResponse(const FString& newResponse);
+	void DelayFunction();
 	FString ResponseContent;
 	FString lastAlert;
+	FTimerHandle  TimerHandle;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (BindWidget))
 	class UTextBlock* AlertText;
