@@ -17,10 +17,6 @@ def sensor_data():
 
     if topic == "sensor/sound":
         message_queue.put(data)
-        alert = data.get('message')
-        print(data.get("message"))
-        whole_msg = data
-        print(f"THE DATA: {data}")
 
     return jsonify({"message": "Data received successfully"}), 200
 
