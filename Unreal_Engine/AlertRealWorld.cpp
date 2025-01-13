@@ -6,6 +6,9 @@
 #include "Interfaces/IHttpResponse.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Components/TextBlock.h"
+#include "Json.h"
+#include "JsonUtilities.h"
+#include "TimerManager.h"
 #include "Components/Border.h"
 
 float TimeSinceLastCalled = 0.0f;
@@ -13,8 +16,8 @@ float TimeSinceLastCalled = 0.0f;
 
 void UAlertsRealWorld::NativeConstruct(){
 	Super::NativeConstruct();
-
-	//if (Border) Border->SetVisibility(ESlateVisibility::Collapsed);
+	FString output = "";
+	AlertText->SetText(FText::FromString(output));
 }
 
 void UAlertsRealWorld::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -22,7 +25,7 @@ void UAlertsRealWorld::NativeTick(const FGeometry& MyGeometry, float InDeltaTime
 	Super::NativeTick(MyGeometry, InDeltaTime);
 	TimeSinceLastCalled += InDeltaTime;
 
-	if (TimeSinceLastCalled >= 3.0f)
+	if (TimeSinceLastCalled >= 0.5f)
 	{
 		RetriveAlert();
 		TimeSinceLastCalled = 0.0f;
@@ -40,7 +43,32 @@ void UAlertsRealWorld::RetriveAlert()
 		{ 
 			FString ResponseContent = Response->GetContentAsString();
 			UE_LOG(LogTemp, Log, TEXT("Message from Flask: %s"), *ResponseContent);
-			this->checkResponse(ResponseContent);
+			TSharedPtr<FJsonObject> JsonObject;
+			TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(ResponseContent);
+
+			if (FJsonSerializer::Deserialize(Reader, JsonObject) && JsonObject.IsValid())
+			{
+				FString Message = JsonObject->GetStringField(TEXT("message"));
+
+				if (JsonObject->HasField(TEXT("topic")))
+				{
+					FString Topic = JsonObject->GetStringField(TEXT("topic"));
+					UE_LOG(LogTemp, Log, TEXT("Topic: %s"), *Topic);
+				
+					if (Topic == "sensor/sound")
+					{
+						FString output = "There is noice around you";
+						AlertText->SetText(FText::FromString(output));
+						GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &UAlertsRealWorld::DelayFunction, 2.0f, false);
+					}
+				}
+				else
+				{
+					FString output = "";
+					AlertText->SetText(FText::FromString(output));
+				}
+
+			}
 		}
 		else
 		{
@@ -51,11 +79,7 @@ void UAlertsRealWorld::RetriveAlert()
 	Request->ProcessRequest();
 }
 
-void UAlertsRealWorld::checkResponse(const FString& newResponse)
+void UAlertsRealWorld::DelayFunction()
 {
-	if (newResponse != lastAlert && newResponse != "No alert")
-	{
-		AlertText->SetText(FText::FromString(newResponse));
-	}
-	lastAlert = newResponse;
+	UE_LOG(LogTemp, Error, TEXT("two second delay"));
 }
