@@ -53,8 +53,9 @@ void UAlertsRealWorld::RetriveAlert()
 
 void UAlertsRealWorld::checkResponse(const FString& newResponse)
 {
-	if (newResponse != lastAlert)
+	if (newResponse != lastAlert && newResponse != "No alert")
 	{
 		AlertText->SetText(FText::FromString(newResponse));
 	}
+	lastAlert = newResponse;
 }
